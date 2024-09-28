@@ -2,7 +2,6 @@ package webserver;
 
 import db.MemoryUserRepository;
 import model.User;
-
 import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
@@ -39,7 +38,7 @@ public class RequestHandler implements Runnable {
 
                     // HTTP 메서드에 따른 요청 처리
                     if ("GET".equalsIgnoreCase(method)) {
-                        handleGetRequest(dos, path);
+                        handleGetRequest(br, dos, path);
                     } else if ("POST".equalsIgnoreCase(method)) {
                         handlePostRequest(br, dos, path);
                     }
@@ -52,7 +51,6 @@ public class RequestHandler implements Runnable {
     }
 
     private void handlePostRequest(BufferedReader br, DataOutputStream dos, String path) throws IOException {
-
         String line;
         int contentLength = 0;
         // 헤더에서 Content-Length 읽기
@@ -94,13 +92,17 @@ public class RequestHandler implements Runnable {
                 memoryUserRepository.addUser(user); // 사용자 저장소에 사용자 추가
             }
             if(path.equals("/user/login")){
-
+                handleLogin(dos, paramValues[0], paramValues[1]);
             }
         }
         sendRedirect(dos, "/index.html"); // 리다이렉트
     }
 
-    private void handleGetRequest(DataOutputStream dos, String path) throws IOException {
+    private void handleGetRequest(BufferedReader br, DataOutputStream dos, String path) throws IOException {
+        // 쿠키 확인
+        String cookie = getCookie(br);
+        boolean isLoggedIn = cookie != null && cookie.contains("logined=true");
+
         // 요청 경로에 따른 HTML 파일 전송
         if ("/".equals(path) || "/index.html".equals(path)) {
             SendHTML(dos, "index.html");
@@ -110,6 +112,20 @@ public class RequestHandler implements Runnable {
         }
         if ("/user/login.html".equals(path)) {
             SendHTML(dos, "/user/login.html");
+        }
+        if ("/user/login_failed.html".equals(path)) {
+            SendHTML(dos, "/user/login_failed.html");
+        }
+        if("/user/userList".equals(path)){
+            if(isLoggedIn){
+                SendHTML(dos, "/user/list.html");
+            }
+            if (!isLoggedIn) {
+                SendHTML(dos, "/user/login.html");
+            }
+        }
+        if (path.endsWith(".css")) {
+            sendCSSFile(dos, "/css/styles.css");
         }
         // 회원가입 GET 버전
         if (path.startsWith("/user/signup")) {
@@ -143,6 +159,29 @@ public class RequestHandler implements Runnable {
         }
     }
 
+    private void sendCSSFile(DataOutputStream dos, String path) throws IOException {
+        Path filePath = Paths.get("webapp", path);
+        if (Files.exists(filePath)) {
+            byte[] fileContent = Files.readAllBytes(filePath);
+            dos.writeBytes("HTTP/1.1 200 OK \r\n");
+            dos.writeBytes("Content-Type: text/css\r\n");
+            dos.writeBytes("Content-Length: " + fileContent.length + "\r\n");
+            dos.writeBytes("\r\n");
+            dos.write(fileContent);
+            dos.flush();
+        }
+    }
+
+    private String getCookie(BufferedReader br) throws IOException {
+        String line;
+        while (!(line = br.readLine()).isEmpty()) {
+            if (line.startsWith("Cookie:")) {
+                return line.substring("Cookie:".length()).trim();
+            }
+        }
+        return null;
+    }
+
     private void SendHTML(DataOutputStream dos, String fileName) throws IOException {
         Path filePath = Paths.get("webapp", fileName); // 파일 경로 설정
         // 파일이 존재하는 경우 HTML 파일 전송
@@ -164,6 +203,29 @@ public class RequestHandler implements Runnable {
             dos.flush();
         } catch (IOException e) {
             e.printStackTrace(); // 예외 발생 시 스택 트레이스 출력
+        }
+    }
+
+    private void handleLogin(DataOutputStream dos, String userId, String password) throws IOException {
+        User user = memoryUserRepository.findUserById(userId);
+        if (user != null && user.getPassword().equals(password)) {
+            sendRedirectWithCookie(dos, "/index.html", "logined=true");
+        } else {
+            sendRedirect(dos, "/user/login_failed.html");
+        }
+    }
+
+    //sendRedirect와 합칠 수 있는지 궁금함
+    private void sendRedirectWithCookie(DataOutputStream dos, String redirectUrl, String cookie) {
+        try {
+            dos.writeBytes("HTTP/1.1 302 Found \r\n");
+            dos.writeBytes("Location: " + redirectUrl + "\r\n");
+            dos.writeBytes("Set-Cookie: " + cookie + "\r\n");
+            dos.writeBytes("Content-Length: 0 \r\n");
+            dos.writeBytes("\r\n");
+            dos.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
