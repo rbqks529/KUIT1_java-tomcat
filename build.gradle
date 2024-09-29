@@ -12,6 +12,9 @@ repositories {
 dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+
+    // Assertj 라이브러리 추가
+    testImplementation("org.assertj:assertj-core:3.26.3")
 }
 
 test {
