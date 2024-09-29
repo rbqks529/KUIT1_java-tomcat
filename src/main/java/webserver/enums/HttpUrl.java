@@ -1,7 +1,6 @@
 package webserver.enums;
 
 public enum HttpUrl {
-    HTTP_ROOT("/"),
     HTTP_INDEX_HTML("/index.html"),
     HTTP_REGISTER_FORM_HTML("/user/form.html"),
     HTTP_LOGIN_HTML("/user/login.html"),

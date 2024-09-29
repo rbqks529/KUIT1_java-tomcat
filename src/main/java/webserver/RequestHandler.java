@@ -33,6 +33,9 @@ public class RequestHandler implements Runnable {
 
             HttpRequest request = new HttpRequest(br);
             HttpResponse response = new HttpResponse(out);
+            
+            //client의 request 전체 출력
+            //log.info("Complete HTTP Request:\n" + request.toString());
 
             Controller controller = RequestMapper.getController(request);
             controller.execute(request, response);

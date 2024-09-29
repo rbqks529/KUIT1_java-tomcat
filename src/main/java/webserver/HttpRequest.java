@@ -82,4 +82,25 @@ public class HttpRequest {
             }
         }
     }
+    
+    //request 출력
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+
+        // 첫 줄: 요청 라인 (HTTP 메서드, 경로, HTTP 버전)
+        sb.append(method).append(" ").append(path).append(" HTTP/1.1\r\n");
+
+        // 헤더 추가
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\r\n");
+        }
+
+        // 바디가 존재할 경우 추가
+        if (body != null && !body.isEmpty()) {
+            sb.append("\r\n").append(body);
+        }
+
+        return sb.toString();
+    }
 }
