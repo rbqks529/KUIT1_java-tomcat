@@ -10,7 +10,7 @@ public class ListController implements Controller {
     public void execute(HttpRequest request, HttpResponse response) throws IOException {
         //로그인 되어있으면 리스트 HTML 전송
         if (isLoggedIn(request)) {
-            response.forward(HTTP_LOGIN_HTML.getValue());
+            response.forward(HTTP_LIST_HTML.getValue());
         } else {
             response.forward(HTTP_LOGIN_HTML.getValue());
         }
